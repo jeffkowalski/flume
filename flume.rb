@@ -70,12 +70,13 @@ class Flume < Thor
   end
 
   desc 'record-status', 'record the current usage data to database'
+  method_option :offset, type: :numeric, default: 0, desc: "offset to earlier hours"
   def record_status
     setup_logger
 
     credentials = YAML.load_file CREDENTIALS_PATH
-    until_datetime = (Time.now - 60).strftime '%F %T'
-    since_datetime = (Time.now - 60 * 60 + 1).strftime '%F %T'
+    until_datetime = (Time.now - options[:offset] * 60 * 60 - 60).strftime '%F %T'
+    since_datetime = (Time.now - (options[:offset] + 1) * 60 * 60 + 1).strftime '%F %T'
 
     begin
       response = RestClient::Request.execute(
@@ -107,6 +108,11 @@ class Flume < Thor
       end
     rescue RestClient::BadRequest => e
       @logger.error e.response.body
+    rescue RestClient::Unauthorized => e
+      @logger.error e.response.body
+      @logger.error "Needs re-authorization, use 'auth' command"
+    rescue StandardError => e
+      @logger.error e
     end
   end
 end
