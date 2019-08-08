@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'thor'
 require 'fileutils'
@@ -38,34 +39,19 @@ class Flume < Thor
   class_option :log,     type: :boolean, default: true, desc: "log output to #{LOGFILE}"
   class_option :verbose, type: :boolean, aliases: '-v', desc: 'increase verbosity'
 
-  desc 'authorize', '[re]authorize the application'
-  def authorize
+  desc 'authenticate', 'authenticate with the service'
+  def authenticate
     credentials = YAML.load_file CREDENTIALS_PATH
 
-    state = Time.now.to_i
-    redirected_url = nil
-    RestClient.post('https://flumetech.com/login',
-                    username: credentials[:username],
-                    password: credentials[:password],
-                    client_id: 'customer-portal',
-                    redirect_uri: 'https://portal.flumetech.com',
-                    state: state) do |response, request, result, &block|
-      if [301, 302, 307].include? response.code
-        redirected_url = response.headers[:location]
-      else
-        response.return!(request, result, &block)
-      end
-    end
-    uri = Addressable::URI.parse redirected_url
-    code = uri.query_values['code']
-
     response = RestClient.post('https://api.flumetech.com/oauth/token',
-                               client_id: 'customer-portal',
-                               grant_type: 'authorization_code',
-                               code: code,
-                               redirect_uri: 'https://portal.flumetech.com')
+                               grant_type: 'password',
+                               client_id: credentials[:client_id],
+                               client_secret: credentials[:client_secret],
+                               username: credentials[:username],
+                               password: credentials[:password])
     token = JSON.parse(response)
     credentials[:access_token] = token['data'].first['access_token']
+    credentials[:refresh_token] = token['data'].first['refresh_token']
     File.open(CREDENTIALS_PATH, 'w') { |file| file.write(credentials.to_yaml) }
   end
 
@@ -73,6 +59,8 @@ class Flume < Thor
   method_option :offset, type: :numeric, default: 0, desc: "offset to earlier hours"
   def record_status
     setup_logger
+
+    authenticate
 
     credentials = YAML.load_file CREDENTIALS_PATH
     until_datetime = (Time.now - options[:offset] * 60 * 60 - 60).strftime '%F %T'
@@ -110,7 +98,6 @@ class Flume < Thor
       @logger.error e.response.body
     rescue RestClient::Unauthorized => e
       @logger.error e.response.body
-      @logger.error "Needs re-authorization, use 'auth' command"
     rescue StandardError => e
       @logger.error e
     end
