@@ -2,8 +2,6 @@ flume - read status from flume water sensor and record to influxdb
 
 * Install
 bundle install
-* Authorize
-./flume.rb authorize --no-log --verbose
 * Scan
 Usage:
   flume.rb record-status
