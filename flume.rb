@@ -57,6 +57,7 @@ class Flume < Thor
 
   desc 'record-status', 'record the current usage data to database'
   method_option :offset, type: :numeric, default: 0, desc: "offset to earlier hours"
+  method_option :dry_run, type: :boolean, aliases: '-n', desc: "don't log to database"
   def record_status
     setup_logger
 
@@ -85,14 +86,14 @@ class Flume < Thor
       meter = JSON.parse response
       @logger.info meter
 
-      influxdb = InfluxDB::Client.new 'flume'
+      influxdb = options[:dry_run] ? nil : (InfluxDB::Client.new 'flume')
       meter['data'].first['graph'].each do |reading|
         timestamp = Time.parse(reading['datetime']).to_i
         data = {
           values: { value: reading['value'].to_f },
           timestamp: timestamp
         }
-        influxdb.write_point('flow', data)
+        influxdb.write_point('flow', data) unless options[:dry_run]
       end
     rescue RestClient::BadRequest => e
       @logger.error e.response.body
