@@ -55,6 +55,17 @@ class Flume < Thor
     File.open(CREDENTIALS_PATH, 'w') { |file| file.write(credentials.to_yaml) }
   end
 
+  desc 'show-devices', 'print details about devices associated with the user'
+  def show_devices
+    authenticate
+
+    credentials = YAML.load_file CREDENTIALS_PATH
+    response = RestClient.get("https://api.flumetech.com/users/#{credentials[:user]}/devices",
+                              {authorization: "Bearer #{credentials[:access_token]}",
+                               content_type: 'application/json' })
+    pp JSON.parse response
+  end
+
   desc 'record-status', 'record the current usage data to database'
   method_option :offset, type: :numeric, default: 0, desc: "offset to earlier hours"
   method_option :dry_run, type: :boolean, aliases: '-n', desc: "don't log to database"
