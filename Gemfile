@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'addressable'
-gem 'influxdb'
+gem 'influxdb', git: 'https://github.com/jeffkowalski/influxdb-ruby.git'
 gem 'rest-client'
 gem 'thor'
 
