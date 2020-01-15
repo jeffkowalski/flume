@@ -13,6 +13,21 @@ require 'addressable/uri'
 LOGFILE = File.join(Dir.home, '.log', 'flume.log')
 CREDENTIALS_PATH = File.join(Dir.home, '.credentials', 'flume.yaml')
 
+module Kernel
+  def with_rescue(exceptions, logger, retries: 5)
+    try = 0
+    begin
+      yield try
+    rescue *exceptions => e
+      try += 1
+      raise if try > retries
+
+      logger.info "caught error #{e.class}, retrying (#{try}/#{retries})..."
+      retry
+    end
+  end
+end
+
 class Flume < Thor
   no_commands do
     def redirect_output
@@ -79,12 +94,13 @@ class Flume < Thor
     since_datetime = (Time.now - (options[:offset] + 1) * 60 * 60 + 1).strftime '%F %T'
 
     begin
-      response = RestClient::Request.execute(
-        method: 'POST',
-        url: "https://api.flumetech.com/users/#{credentials[:user]}/devices/#{credentials[:device]}/query",
-        headers: { authorization: "Bearer #{credentials[:access_token]}",
-                   content_type: 'application/json' },
-        payload: %({"queries": [{
+      meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout], @logger) do |_try|
+        response = RestClient::Request.execute(
+          method: 'POST',
+          url: "https://api.flumetech.com/users/#{credentials[:user]}/devices/#{credentials[:device]}/query",
+          headers: { authorization: "Bearer #{credentials[:access_token]}",
+                     content_type: 'application/json' },
+          payload: %({"queries": [{
                     "raw": false,
                     "request_id": "graph",
                     "group_multiplier": 1,
@@ -93,8 +109,9 @@ class Flume < Thor
                     "since_datetime": "#{since_datetime}"
                   }]
                 })
-      )
-      meter = JSON.parse response
+        )
+        JSON.parse response
+      end
       @logger.info meter
 
       influxdb = options[:dry_run] ? nil : (InfluxDB::Client.new 'flume')
