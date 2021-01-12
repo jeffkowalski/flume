@@ -114,7 +114,7 @@ class Flume < Thor
       end
       @logger.info meter
 
-      influxdb = options[:dry_run] ? nil : (InfluxDB::Client.new 'flume')
+      influxdb = options[:dry_run] ? nil : (InfluxDB::Client.new 'flume') unless options[:dry_run]
       meter['data'].first['graph'].each do |reading|
         timestamp = Time.parse(reading['datetime']).to_i
         data = {
