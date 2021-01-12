@@ -75,7 +75,7 @@ class Flume < Thor
     authenticate
 
     credentials = YAML.load_file CREDENTIALS_PATH
-    response = RestClient.get "https://api.flumetech.com/users/#{credentials[:user]}/devices",
+    response = RestClient.get "https://api.flumetech.com/users/#{credentials[:user]}/devices?user=false&location=false",
                               authorization: "Bearer #{credentials[:access_token]}",
                               content_type: 'application/json'
     pp JSON.parse response
