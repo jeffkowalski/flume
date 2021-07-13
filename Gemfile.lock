@@ -7,7 +7,7 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.7.0)
+    addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     coderay (1.1.2)
     domain_name (0.5.20190701)
@@ -26,7 +26,7 @@ GEM
     pry-doc (1.0.0)
       pry (~> 0.11)
       yard (~> 0.9.11)
-    public_suffix (4.0.2)
+    public_suffix (4.0.6)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
       http-cookie (>= 1.0.2, < 2.0)
