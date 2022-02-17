@@ -10,12 +10,14 @@ class Flume < RecorderBotBase
   def authenticate
     credentials = load_credentials
 
-    response = RestClient.post('https://api.flumetech.com/oauth/token',
+    response = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout], logger) do |_try|
+      RestClient.post('https://api.flumetech.com/oauth/token',
                                grant_type: 'password',
                                client_id: credentials[:client_id],
                                client_secret: credentials[:client_secret],
                                username: credentials[:username],
                                password: credentials[:password])
+    end
     token = JSON.parse(response)
     credentials[:access_token] = token['data'].first['access_token']
     credentials[:refresh_token] = token['data'].first['refresh_token']
