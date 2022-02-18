@@ -51,32 +51,26 @@ class Flume < RecorderBotBase
             url: "https://api.flumetech.com/users/#{credentials[:user]}/devices/#{credentials[:device]}/query",
             headers: { authorization: "Bearer #{credentials[:access_token]}",
                        content_type: 'application/json' },
-            payload: %({"queries": [{
-                    "raw": false,
-                    "request_id": "graph",
-                    "group_multiplier": 1,
-                    "bucket": "MIN",
-                    "until_datetime": "#{until_datetime}",
-                    "since_datetime": "#{since_datetime}"
-                  }]
-                })
+            payload: %({ "queries": [{
+                         "raw": false,
+                         "request_id": "graph",
+                         "group_multiplier": 1,
+                         "bucket": "MIN",
+                         "until_datetime": "#{until_datetime}",
+                         "since_datetime": "#{since_datetime}" }] })
           )
           JSON.parse response
         end
         logger.info meter
 
-        influxdb = options[:dry_run] ? nil : (InfluxDB::Client.new 'flume') unless options[:dry_run]
-        meter['data'].first['graph'].each do |reading|
-          timestamp = Time.parse(reading['datetime']).to_i
-          data = {
+        influxdb = InfluxDB::Client.new 'flume' unless options[:dry_run]
+        data = meter['data'].first['graph'].map do |reading|
+          { series: 'flow',
             values: { value: reading['value'].to_f },
-            timestamp: timestamp
-          }
-          influxdb.write_point('flow', data) unless options[:dry_run]
+            timestamp: Time.parse(reading['datetime']).to_i }
         end
-      rescue RestClient::BadRequest => e
-        logger.error e.response.body
-      rescue RestClient::Unauthorized => e
+        influxdb.write_points(data) unless options[:dry_run]
+      rescue RestClient::BadRequest, RestClient::Unauthorized => e
         logger.error e.response.body
       end
     end
