@@ -12,11 +12,11 @@ class Flume < RecorderBotBase
 
     response = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout], logger) do |_try|
       RestClient.post('https://api.flumetech.com/oauth/token',
-                               grant_type: 'password',
-                               client_id: credentials[:client_id],
-                               client_secret: credentials[:client_secret],
-                               username: credentials[:username],
-                               password: credentials[:password])
+                      grant_type: 'password',
+                      client_id: credentials[:client_id],
+                      client_secret: credentials[:client_secret],
+                      username: credentials[:username],
+                      password: credentials[:password])
     end
     token = JSON.parse(response)
     credentials[:access_token] = token['data'].first['access_token']
@@ -35,8 +35,7 @@ class Flume < RecorderBotBase
     pp JSON.parse response
   end
 
-  class_option :offset, type: :numeric, default: 0, desc: 'offset to earlier hours'
-  # FIXME: method_option :offset, type: :numeric, default: 0, desc: 'offset to earlier hours'
+  method_option :offset, type: :numeric, default: 0, desc: 'offset to earlier hours', for: :record_status
   no_commands do
     def main
       authenticate
