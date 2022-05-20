@@ -10,7 +10,7 @@ class Flume < RecorderBotBase
   def authenticate
     credentials = load_credentials
 
-    response = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout], logger) do |_try|
+    response = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout, SocketError], logger) do |_try|
       RestClient.post('https://api.flumetech.com/oauth/token',
                       grant_type: 'password',
                       client_id: credentials[:client_id],
@@ -45,7 +45,7 @@ class Flume < RecorderBotBase
       since_datetime = (Time.now - (options[:offset] + 1) * 60 * 60 + 1).strftime '%F %T'
 
       begin
-        meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout], logger) do |_try|
+        meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout, SocketError], logger) do |_try|
           response = RestClient::Request.execute(
             method: 'POST',
             url: "https://api.flumetech.com/users/#{credentials[:user]}/devices/#{credentials[:device]}/query",
