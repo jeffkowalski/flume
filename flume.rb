@@ -42,7 +42,7 @@ class Flume < RecorderBotBase
 
       credentials = load_credentials
       until_datetime = (Time.now - options[:offset] * 60 * 60 - 60).strftime '%F %T'
-      since_datetime = (Time.now - (options[:offset] + 24) * 60 * 60 + 1).strftime '%F %T' # catch-up 24 hours
+      since_datetime = (Time.now - (options[:offset] + 18) * 60 * 60 + 1).strftime '%F %T' # catch-up 18 hours
 
       begin
         meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout, SocketError], logger) do |_try|
