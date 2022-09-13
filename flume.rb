@@ -45,7 +45,7 @@ class Flume < RecorderBotBase
       since_datetime = (Time.now - (options[:offset] + 18) * 60 * 60 + 1).strftime '%F %T' # catch-up 18 hours
 
       begin
-        meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::Exceptions::OpenTimeout, SocketError], logger) do |_try|
+        meter = with_rescue([RestClient::BadGateway, RestClient::GatewayTimeout, RestClient::InternalServerError, RestClient::Exceptions::OpenTimeout, SocketError], logger) do |_try|
           response = RestClient::Request.execute(
             method: 'POST',
             url: "https://api.flumetech.com/users/#{credentials[:user]}/devices/#{credentials[:device]}/query",
