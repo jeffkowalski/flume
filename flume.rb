@@ -62,7 +62,7 @@ class Flume < RecorderBotBase
         end
         logger.info meter
 
-        influxdb = InfluxDB::Client.new 'flume' unless options[:dry_run]
+        influxdb = new_influxdb_client unless options[:dry_run]
         data = meter['data'].first['graph'].map do |reading|
           { series: 'flow',
             values: { value: reading['value'].to_f },
